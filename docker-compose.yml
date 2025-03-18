@@ -1,0 +1,66 @@
+# Docker Compose file cho dự án URL Shortener
+services:
+  # SQL Server database
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      SA_PASSWORD: "Password1234"  # Sử dụng mật khẩu không có ký tự đặc biệt
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Express"
+    ports:
+      - "1444:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    # Đã bỏ healthcheck
+    restart: on-failure
+  
+  # Redis cache
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # API Backend
+  api:
+    build:
+      context: .
+      dockerfile: src/UrlShortener.Api/Dockerfile
+    ports:
+      - "5001:80"
+    depends_on:
+      - redis
+      - sqlserver  # Đã bỏ điều kiện service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=UrlShortener;User=sa;Password=Password1234;TrustServerCertificate=true;ConnectRetryCount=10;ConnectRetryInterval=10
+      - ConnectionStrings__RedisConnection=redis:6379
+      - UrlShortener__BaseUrl=http://localhost:5001/s
+  
+  # Web Frontend
+  web:
+    build:
+      context: .
+      dockerfile: src/UrlShortener.Web/Dockerfile
+    ports:
+      - "5002:80"
+    depends_on:
+      - api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Api__ApiBaseUrl=http://api
+
+# Định nghĩa networks và volumes
+networks:
+  default:
+    name: urlshortener-network
+
+volumes:
+  sqlserver-data:
+  redis-data:
