@@ -1,0 +1,65 @@
+﻿@model UrlShortenViewModel
+@{
+    ViewData["Title"] = "URL Shortener";
+}
+
+<div class="text-center">
+    <h1 class="display-4">URL Shortener</h1>
+    <p>Enter a long URL to create a shorter, more manageable link.</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form asp-action="Shorten" method="post">
+                    <div class="form-group mb-3">
+                        <label asp-for="LongUrl">URL to Shorten</label>
+                        <input asp-for="LongUrl" class="form-control" placeholder="https://example.com/your-very-long-url-that-needs-shortening">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label asp-for="CustomCode">Custom Code (Optional)</label>
+                        <input asp-for="CustomCode" class="form-control" placeholder="Custom code (e.g., 'mylink')">
+                        <small class="form-text text-muted">Leave blank for auto-generated code.</small>
+                    </div>
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary">Shorten</button>
+                    </div>
+                </form>
+                
+                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                {
+                    <div class="alert alert-danger mt-3">
+                        @Model.ErrorMessage
+                    </div>
+                }
+                
+                @if (!string.IsNullOrEmpty(Model.ShortUrl))
+                {
+                    <div class="alert alert-success mt-3">
+                        <p>Your shortened URL:</p>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="shortUrlInput" value="@Model.ShortUrl" readonly>
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard()">Copy</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function copyToClipboard() {
+            var copyText = document.getElementById("shortUrlInput");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(copyText.value);
+            
+            alert("Copied to clipboard: " + copyText.value);
+        }
+    </script>
+}
